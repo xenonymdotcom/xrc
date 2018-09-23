@@ -1,3 +1,9 @@
+The parts of this project written by xenonymdotcom are published under the "MIT License" (see below) 
+but parts may derive for publicly available source code that is under other licenses.
+
+The Text mode hdmi driver is derived from https://github.com/Giako68/Hello which is published under the default github licenses
+no assumptions on it use or suitability should be made.
+
 MIT License
 
 Copyright (c) 2018 xenonymdotcom

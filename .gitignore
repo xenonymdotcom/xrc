@@ -1,32 +1,48 @@
-# Prerequisites
-*.d
+# Xilinx directories
+_ngo
+_xmsgs
+iseconfig
+xlnx_auto_0_xdb
+xst
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+# Xilinx output files
+*.bit
 
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
+# Xilinx intermediate files
+*.bgn
+*.bld
+*.cmd_log
+*.drc
+*.gise
+*.lso
+*.ngc
+*.ngd
+*.ngr
+*.ngm
+*.pad
+*.par
+*.pcf
+*.prj
+*.ptwx
+*.stx
+*.syr
+*.twr
+*.twx
+*.unroutes
+*.ut
+*.xpi
+*.xst
+*.xwbt
+*.ncd
+*.map
+*.mrp
+*.ncd
+*.xrpt
+#generated pad files
+*_pad.*
+# summaries
+*_envsettings.html
+*_summary.*
+*_statistics.html
+*_usage.*
+*webtalk*
