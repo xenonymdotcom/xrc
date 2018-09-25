@@ -11,7 +11,8 @@
 module XrcCore
 ( input clk50,
   output [3:0] tmds_out_p,
-  output [3:0] tmds_out_n
+  output [3:0] tmds_out_n,
+  output [7:0] LEDS
 );
 
   reg [12:0] WAddr;
@@ -27,6 +28,7 @@ module XrcCore
   reg [15:0] Frame = 16'd0;
   integer Row;
   integer Col;
+  reg [32:0] counter = 0;
   
   wire Clock;
   
@@ -34,6 +36,8 @@ module XrcCore
 
   TextGraphic TEXT(.clk50(Clock), .tmds_out_p(tmds_out_p), .tmds_out_n(tmds_out_n), 
                    .WAddr(WAddr), .WData(WData), .WClk(Clock), .Write(Write));
+						 
+  LedDriver LedDisplay(.clk50(Clock), .LEDS(LEDS));
 						
   initial
     begin
@@ -60,7 +64,7 @@ module XrcCore
 		Row = 0;
 		Col = 0;
     end	 
-
+	
   always @(negedge Clock)
     begin
 	   case(Status)
