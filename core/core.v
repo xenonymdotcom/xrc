@@ -18,7 +18,6 @@ module XrcCore
   reg [12:0] WAddr;
   reg [17:0] WData;
   reg Write;
-  reg [7:0] String[14:0];
   reg [3:0] Status;
   reg [3:0] Index;
   reg [3:0] BG;
@@ -28,7 +27,7 @@ module XrcCore
   reg [15:0] Frame = 16'd0;
   integer Row;
   integer Col;
-  reg [32:0] counter = 0;
+  reg [3:0] counter = 0;
   
   wire Clock;
   
@@ -41,21 +40,6 @@ module XrcCore
 						
   initial
     begin
-	   String[0] = 8'h20;  // 
-	   String[1] = 8'h48;  // H
-	   String[2] = 8'h65;  // e
-	   String[3] = 8'h6C;  // l
-	   String[4] = 8'h6C;  // l
-	   String[5] = 8'h6F;  // o
-	   String[6] = 8'h2C;  // ,
-	   String[7] = 8'h20;  //
-	   String[8] = 8'h57;  // W
-	   String[9] = 8'h6F;  // o
-	   String[10] = 8'h72; // r
-	   String[11] = 8'h6C; // l
-	   String[12] = 8'h64; // d
-	   String[13] = 8'h21; // !
-	   String[14] = 8'h20; // 
 		Status = 4'h0;
 		Index = 4'h0;
 		Write = 1'b0;
@@ -76,7 +60,7 @@ module XrcCore
                 Status = 4'h1;
 				  end
 		  4'h1: begin
-					BG = Row[3:0];
+					BG = Row[3:0] + Frame[15:12];
 					FG = 4'hF - Row;
 					BL = 2'b00;
 					Char = Char + 1;
