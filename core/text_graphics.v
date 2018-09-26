@@ -214,7 +214,7 @@ module TextGraphic
   wire SerOutRed;
   wire SerOutGreen;
   wire SerOutBlue;
-  wire SerOutClock;
+  reg SerOutClock=0;
 
   Component_encoder CE_Red(.Data(Red), .C0(1'b0), .C1(1'b0), .DE(VideoEnable), .PixClk(PixClk), .OutEncoded(EncRed));
   Component_encoder CE_Green(.Data(Green), .C0(1'b0), .C1(1'b0), .DE(VideoEnable), .PixClk(PixClk), .OutEncoded(EncGreen));
@@ -223,7 +223,11 @@ module TextGraphic
   Serializer_10_1 SER_Red(.Data(EncRed), .Clk_10(PixClk_10), .Clk_2(PixClk_2), .Strobe(SerDesStrobe), .Out(SerOutRed));
   Serializer_10_1 SER_Green(.Data(EncGreen), .Clk_10(PixClk_10), .Clk_2(PixClk_2), .Strobe(SerDesStrobe), .Out(SerOutGreen));
   Serializer_10_1 SER_Blue(.Data(EncBlue), .Clk_10(PixClk_10), .Clk_2(PixClk_2), .Strobe(SerDesStrobe), .Out(SerOutBlue));
-  Serializer_10_1 SER_Clock(.Data(10'b0000011111), .Clk_10(PixClk_10), .Clk_2(PixClk_2), .Strobe(SerDesStrobe), .Out(SerOutClock));
+  // Serializer_10_1 SER_Clock(.Data(10'b0000011111), .Clk_10(PixClk_10), .Clk_2(PixClk_2), .Strobe(SerDesStrobe), .Out(SerOutClock));
+  always @(posedge PixClk_2)
+  begin
+		SerOutClock = !SerOutClock;
+  end
   
   OBUFDS OutBufDif_B(.I(SerOutBlue), .O(tmds_out_p[0]), .OB(tmds_out_n[0]));
   OBUFDS OutBufDif_G(.I(SerOutGreen), .O(tmds_out_p[1]), .OB(tmds_out_n[1]));
