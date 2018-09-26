@@ -61,7 +61,7 @@ module XrcCore
 				  end
 		  4'h1: begin
 					BG = Row[3:0]; // + Frame[15:12];
-					FG = 4'hF - Row;
+					FG = 4'hF - (Row & 4'hF);
 					BL = 2'b00;
 					Char = Char + 1;
 					Status = 4'h2;

@@ -34,6 +34,8 @@ module TextGraphic
 
   // DCM Derivated Clocks
   wire SEQ_IN_0;    // PixClk shift 90
+  wire PixClk;
+  wire PixClk_2;
 
   reg [23:0] Palette[15:0];
   integer SynRow;
@@ -41,7 +43,7 @@ module TextGraphic
   reg [3:0] CharLine;
   reg [15:0] BaseAddr;
   reg [15:0] TextAddr;
-  reg [9:0] VideoRow;
+  // reg [9:0] VideoRow;
   reg [9:0] VideoCol;
   reg HSync;
   reg VSync;
@@ -145,8 +147,8 @@ module TextGraphic
       HSync = ((SynCol < H_sync_start) || (SynCol > H_sync_stop)) ? 1'b0 : 1'b1;
 		VSync = ((SynRow < V_sync_start) || (SynRow > V_sync_stop)) ? 1'b0 : 1'b1;
 		VideoEnable = ((SynCol < H_img_start) || (SynRow < V_img_start) || (SynCol > H_img_stop) || (SynRow > V_img_stop)) ? 1'b0 : 1'b1;
-      VideoCol = ((SynCol < H_img_start) || (SynCol > H_img_stop)) ? 10'h000 : SynCol - H_img_start;
-      VideoRow = ((SynRow < V_img_start) || (SynRow > V_img_stop)) ? 10'h000 : SynRow - V_img_start;
+      VideoCol = ((SynCol < H_img_start) || (SynCol > H_img_stop)) ? 10'h000 : (SynCol - H_img_start); //[9:0];
+      // VideoRow = ((SynRow < V_img_start) || (SynRow > V_img_stop)) ? 10'h000 : SynRow - V_img_start;
 		TextAddr = BaseAddr + VideoCol;
 		ADDRA = {TextAddr[12:3], 4'h0};
       VideoData = DOA[TextAddr[15:13]][15:0];
@@ -204,6 +206,17 @@ module TextGraphic
 // * TMDS Encoding & Serialization
 // ************************************************************************************************
 
+HdmiDisplay HdmiRenderEngine(.clk50(clk50),
+  .tmds_out_p(tmds_out_p),
+  .tmds_out_n(tmds_out_n),
+  .PixClk(PixClk),
+  .PixClk_2(PixClk_2),
+  .Red(Red),
+  .Green(Green),
+  .Blue(Blue),
+  .HSync(HSync), .VSync(VSync), .VideoEnable(VideoEnable)
+);
+/*
   wire PixClk;
   wire PixClk_2;
   wire PixClk_10;
@@ -223,7 +236,6 @@ module TextGraphic
   Serializer_10_1 SER_Red(.Data(EncRed), .Clk_10(PixClk_10), .Clk_2(PixClk_2), .Strobe(SerDesStrobe), .Out(SerOutRed));
   Serializer_10_1 SER_Green(.Data(EncGreen), .Clk_10(PixClk_10), .Clk_2(PixClk_2), .Strobe(SerDesStrobe), .Out(SerOutGreen));
   Serializer_10_1 SER_Blue(.Data(EncBlue), .Clk_10(PixClk_10), .Clk_2(PixClk_2), .Strobe(SerDesStrobe), .Out(SerOutBlue));
-  // Serializer_10_1 SER_Clock(.Data(10'b0000011111), .Clk_10(PixClk_10), .Clk_2(PixClk_2), .Strobe(SerDesStrobe), .Out(SerOutClock));
   always @(posedge PixClk_2)
   begin
 		SerOutClock = !SerOutClock;
@@ -232,7 +244,7 @@ module TextGraphic
   OBUFDS OutBufDif_B(.I(SerOutBlue), .O(tmds_out_p[0]), .OB(tmds_out_n[0]));
   OBUFDS OutBufDif_G(.I(SerOutGreen), .O(tmds_out_p[1]), .OB(tmds_out_n[1]));
   OBUFDS OutBufDif_R(.I(SerOutRed), .O(tmds_out_p[2]), .OB(tmds_out_n[2]));
-  OBUFDS OutBufDif_C(.I(SerOutClock), .O(tmds_out_p[3]), .OB(tmds_out_n[3]));
+  OBUFDS OutBufDif_C(.I(SerOutClock), .O(tmds_out_p[3]), .OB(tmds_out_n[3]));*/
 
 // ************************************************************************************************
 // * Text MAP RAM Port B: Write MAP Data by external usage
@@ -275,13 +287,13 @@ module TextGraphic
   assign DIB6 = {16'h0000, WData[15:0]};
   assign DIB7 = {16'h0000, WData[15:0]};
   assign DIPB0 = {2'b00, WData[17:16]};
-  assign DIPB1 = {2'b00, WData[17:16]};
-  assign DIPB2 = {2'b00, WData[17:16]};
-  assign DIPB3 = {2'b00, WData[17:16]};
-  assign DIPB4 = {2'b00, WData[17:16]};
-  assign DIPB5 = {2'b00, WData[17:16]};
-  assign DIPB6 = {2'b00, WData[17:16]};
-  assign DIPB7 = {2'b00, WData[17:16]};
+  //assign DIPB1 = {2'b00, WData[17:16]};
+  //assign DIPB2 = {2'b00, WData[17:16]};
+  //assign DIPB3 = {2'b00, WData[17:16]};
+  //assign DIPB4 = {2'b00, WData[17:16]};
+  //assign DIPB5 = {2'b00, WData[17:16]};
+  //assign DIPB6 = {2'b00, WData[17:16]};
+  //assign DIPB7 = {2'b00, WData[17:16]};
   
   assign WEB0 = ((WAddr[12:10] == 3'b000) && (Write == 1)) ? 4'hF : 4'h0;
   assign WEB1 = ((WAddr[12:10] == 3'b001) && (Write == 1)) ? 4'hF : 4'h0;
@@ -646,7 +658,7 @@ module TextGraphic
 // ************************************************************************************************
 // * PLL VCO:400MHz  PixClk:40MHz
 // ************************************************************************************************
-
+/*
   wire pll_fbout;      // PLL Feedback
   wire pll_clk10x;     // From PLL to BUFPLL
   wire pll_clk2x;      // From PLL to BUFG
@@ -682,141 +694,5 @@ module TextGraphic
                        .IOCLK(PixClk_10),
                        .SERDESSTROBE(SerDesStrobe),
                        .LOCK());
-
-endmodule
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
-// ************************************************************************************************
-// * TMDS Component Encoder - Data:8/10  Control:2/10
-// ************************************************************************************************
-
-module Component_encoder
-( input [7:0] Data,
-  input C0,
-  input C1,
-  input DE,
-  input PixClk,
-  output [9:0] OutEncoded
-);
-
-  integer Cnt;
-  integer NewCnt;
-  reg [8:0] q_m;
-  integer N1_Data;
-  integer N1_qm;
-  integer N0_qm;
-  reg [9:0] Encoded;
-
-  initial
-    begin
-      Cnt = 0;
-      NewCnt = 0;
-    end
-
-  assign OutEncoded = Encoded;
-  
-  always @(posedge PixClk)
-    begin
-      N1_Data = Data[0] + Data[1] + Data[2] + Data[3] + Data[4] + Data[5] + Data[6] + Data[7];
-      if ((N1_Data > 4) || ((N1_Data == 4) && (Data[0] == 0)))
-        begin
-          q_m[0] = Data[0];
-          q_m[1] = ~(q_m[0] ^ Data[1]);
-          q_m[2] = ~(q_m[1] ^ Data[2]);
-          q_m[3] = ~(q_m[2] ^ Data[3]);
-          q_m[4] = ~(q_m[3] ^ Data[4]);
-          q_m[5] = ~(q_m[4] ^ Data[5]);
-          q_m[6] = ~(q_m[5] ^ Data[6]);
-          q_m[7] = ~(q_m[6] ^ Data[7]);
-          q_m[8] = 0;
-        end
-      else
-        begin
-          q_m[0] = Data[0];
-          q_m[1] = q_m[0] ^ Data[1];
-          q_m[2] = q_m[1] ^ Data[2];
-          q_m[3] = q_m[2] ^ Data[3];
-          q_m[4] = q_m[3] ^ Data[4];
-          q_m[5] = q_m[4] ^ Data[5];
-          q_m[6] = q_m[5] ^ Data[6];
-          q_m[7] = q_m[6] ^ Data[7];
-          q_m[8] = 1;
-        end
-      N1_qm = q_m[0] + q_m[1] + q_m[2] + q_m[3] + q_m[4] + q_m[5] + q_m[6] + q_m[7]; 
-      N0_qm = 8 - N1_qm;
-      if (DE == 1)
-        begin
-          if ((Cnt == 0) || (N1_qm == 4))
-            begin
-              if (q_m[8] == 0)
-                begin
-                  Encoded[9] = 1;
-                  Encoded[8] = 0;
-                  Encoded[7:0] = ~q_m[7:0];
-                  NewCnt = Cnt + N0_qm - N1_qm;
-                end
-              else
-                begin
-                  Encoded[9] = 0;
-                  Encoded[8] = 1;
-                  Encoded[7:0] = q_m[7:0];
-                  NewCnt = Cnt + N1_qm - N0_qm;
-                end
-            end
-          else
-            begin
-              if (((Cnt > 0) && (N1_qm > 4)) || ((Cnt < 0) && (N1_qm < 4)))
-                begin
-                  if (q_m[8] == 0)
-                    begin
-                      Encoded[9] = 1;
-                      Encoded[8] = 0;
-                      Encoded[7:0] = ~q_m[7:0];
-                      NewCnt = Cnt + N0_qm - N1_qm;
-                    end
-                  else
-                    begin
-                      Encoded[9] = 1;
-                      Encoded[8] = 1;
-                      Encoded[7:0] = ~q_m[7:0];
-                      NewCnt = Cnt + N0_qm - N1_qm + 2;
-                    end
-                end
-              else
-                begin
-                  if (q_m[8] == 0)
-                    begin
-                      Encoded[9] = 0;
-                      Encoded[8] = 0;
-                      Encoded[7:0] = q_m[7:0];
-                      NewCnt = Cnt + N1_qm - N0_qm - 2;
-                    end
-                  else
-                    begin
-                      Encoded[9] = 0;
-                      Encoded[8] = 1;
-                      Encoded[7:0] = q_m[7:0];
-                      NewCnt = Cnt + N1_qm - N0_qm;
-                    end
-                end                                           
-            end
-        end
-      else
-        begin
-          NewCnt = 0;
-          case({C0,C1})
-            2'b10:   Encoded = 10'b0010101011;
-            2'b01:   Encoded = 10'b0101010100;
-            2'b11:   Encoded = 10'b1010101011;
-            default: Encoded = 10'b1101010100;
-          endcase        
-        end                    
-    end
-  
-  always @(negedge PixClk)
-    begin
-      Cnt = NewCnt;
-    end  
-
+*/
 endmodule
