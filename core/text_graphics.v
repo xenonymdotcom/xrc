@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
 //
-// Module Name: TextGraphic  ( by Giacomazzi Riccardo 19-02-2015 )
+// Module Name: TextGraphic  ( based on the original by Giacomazzi Riccardo 19-02-2015 )
 //
 // Description: 
 // - Video Mode: 960x540@60Hz
@@ -12,79 +12,80 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 module TextGraphic
-( input clk50,
-  output [3:0] tmds_out_p,
-  output [3:0] tmds_out_n,
-  input [12:0] WAddr,
-  input [17:0] WData,
-  input WClk,
-  input Write
+(
+	input clk50,
+	output [3:0] tmds_out_p,
+	output [3:0] tmds_out_n,
+	input [12:0] WAddr,
+	input [17:0] WData,
+	input WClk,
+	input Write
 );
 
-  parameter integer H_sync_start = 0;        
-  parameter integer H_sync_stop = 152;       // HSync 152 Pixel (3,8us)
-  parameter integer H_img_start = 152+44;    // Front Porch 44 Pixel
-  parameter integer H_img_stop = 959+152+44; // Image Width 960 
-  parameter integer H_screen_stop = 1200;    // Image + Front Porch + HSync + Back Porch
-  parameter integer V_sync_start = 0;        
-  parameter integer V_sync_stop = 5;         // VSync 5 Row (150us)
-  parameter integer V_img_start = 12+5;      // Front Porch 12 Row
-  parameter integer V_img_stop = 539+12+5;   // Image Height 540
-  parameter integer V_screen_stop = 567;     // Image + Front Porch + VSync + Back Porch
+parameter integer H_sync_start = 0;
+parameter integer H_sync_stop = 152;       // HSync 152 Pixel (3,8us)
+parameter integer H_img_start = 152+44;    // Front Porch 44 Pixel
+parameter integer H_img_stop = 959+152+44; // Image Width 960 
+parameter integer H_screen_stop = 1200;    // Image + Front Porch + HSync + Back Porch
+parameter integer V_sync_start = 0;
+parameter integer V_sync_stop = 5;         // VSync 5 Row (150us)
+parameter integer V_img_start = 12+5;      // Front Porch 12 Row
+parameter integer V_img_stop = 539+12+5;   // Image Height 540
+parameter integer V_screen_stop = 567;     // Image + Front Porch + VSync + Back Porch
 
-  // DCM Derivated Clocks
-  wire SEQ_IN_0;    // PixClk shift 90
-  wire PixClk;
-  wire PixClk_2;
 
-  reg [23:0] Palette[15:0];
-  integer SynRow;
-  integer SynCol;
-  reg [3:0] CharLine;
-  reg [15:0] BaseAddr;
-  reg [15:0] TextAddr;
-  // reg [9:0] VideoRow;
-  reg [9:0] VideoCol;
-  reg HSync;
-  reg VSync;
-  reg VideoEnable;
-  reg [13:0] ADDRA;
-  wire [31:0] DOA[7:0];
-  wire [3:0] DOPA[7:0];
-  reg [15:0] VideoData;
-  wire [31:0] G_DOA;
-  wire [3:0] G_DOPA;
-  reg [13:0] G_ADDRA;
-  reg Pixel;
-  reg [7:0] Red;
-  reg [7:0] Green;
-  reg [7:0] Blue;
-  reg [3:0] Foreground;
-  reg [3:0] Background;
-  reg BlinkStatus;
-  reg [1:0] Blink;
-  integer BlinkCounter;
+// DCM Derivated Clocks
+wire SEQ_IN_0;    // 4 * pixel clock or PixClk shift 90
+wire PixClk;
+wire PixClk_2;
 
-  initial
-    begin
-	   Palette[0] = 24'h000000;     // Standard CGA Palette
-	   Palette[1] = 24'h0000AA;
-	   Palette[2] = 24'h00AA00;
-	   Palette[3] = 24'h00AAAA;
-	   Palette[4] = 24'hAA0000;
-	   Palette[5] = 24'hAA00AA;
-	   Palette[6] = 24'hAA5500;
-	   Palette[7] = 24'hAAAAAA;
-	   Palette[8] = 24'h555555;
-	   Palette[9] = 24'h5555FF;
-	   Palette[10] = 24'h55FF55;
-	   Palette[11] = 24'h55FFFF;
-	   Palette[12] = 24'hFF5555;
-	   Palette[13] = 24'hFF55FF;
-	   Palette[14] = 24'hFFFF55;
-	   Palette[15] = 24'hFFFFFF;
-      SynRow = 0;
-      SynCol = 0;
+reg [23:0] Palette[15:0];
+integer SynRow;
+integer SynCol;
+reg [3:0] CharLine;
+reg [15:0] BaseAddr;
+reg [15:0] TextAddr;
+reg [9:0] VideoCol;
+reg HSync;
+reg VSync;
+reg VideoEnable;
+reg [13:0] ADDRA;
+wire [31:0] DOA[7:0];
+wire [3:0] DOPA[7:0];
+reg [15:0] VideoData;
+wire [31:0] G_DOA;
+wire [3:0] G_DOPA;
+reg [13:0] G_ADDRA;
+reg Pixel;
+reg [7:0] Red;
+reg [7:0] Green;
+reg [7:0] Blue;
+reg [3:0] Foreground;
+reg [3:0] Background;
+reg BlinkStatus;
+reg [1:0] Blink;
+integer BlinkCounter;
+
+	initial
+	begin
+		Palette[0] = 24'h000000;     // Standard CGA Palette
+		Palette[1] = 24'h0000AA;
+		Palette[2] = 24'h00AA00;
+		Palette[3] = 24'h00AAAA;
+		Palette[4] = 24'hAA0000;
+		Palette[5] = 24'hAA00AA;
+		Palette[6] = 24'hAA5500;
+		Palette[7] = 24'hAAAAAA;
+		Palette[8] = 24'h555555;
+		Palette[9] = 24'h5555FF;
+		Palette[10] = 24'h55FF55;
+		Palette[11] = 24'h55FFFF;
+		Palette[12] = 24'hFF5555;
+		Palette[13] = 24'hFF55FF;
+		Palette[14] = 24'hFFFF55;
+		Palette[15] = 24'hFFFFFF;
+		SynRow = 0;
+		SynCol = 0;
 		HSync = 1'b0;
 		VSync = 1'b0;
 		VideoEnable = 1'b0;
@@ -93,114 +94,122 @@ module TextGraphic
 		BlinkStatus = 1'b0;
 		BlinkCounter = 0;
 		Blink = 2'b00;
-    end
+		ADDRA = 14'd0;
+		G_ADDRA = 14'd0;
+	end
 
 // ************************************************************************************************
 // * Position Beam Update
 // ************************************************************************************************
 
-  always @(posedge PixClk)
-    begin
-	   if (SynCol < H_screen_stop) SynCol = SynCol + 1;
+	always @(posedge PixClk)
+	begin
+		if (SynCol < H_screen_stop)
+		begin
+			SynCol = SynCol + 1;
+		end
 		else
-		  begin
-		    SynCol = 0;
-			 if (SynRow < V_screen_stop) 
-			   begin 
-				  SynRow = SynRow + 1;
-				  if (SynRow > V_img_start)
-				    begin
-					   if (CharLine < 8)
-						  begin
-  				          CharLine = CharLine + 1;
-						  end
-						else
-                    begin
-						    CharLine = 4'h0;
-							 BaseAddr = BaseAddr + 960;
-                    end						  
-					 end
-				  else
-				    begin
-					 end
+		begin
+			SynCol = 0;
+			if (SynRow < V_screen_stop) 
+			begin 
+				SynRow = SynRow + 1;
+				if (SynRow > V_img_start)
+				begin
+					if (CharLine < 8)
+					begin
+						CharLine = CharLine + 1'b1;
+					end
+					else
+					begin
+						CharLine = 4'h0;
+						BaseAddr = BaseAddr + 16'd960;
+					end
 				end
-			 else
-            begin			 
-			     SynRow = 0;
-		        CharLine = 4'h0;
-				  BaseAddr = 16'h0000;
+				else
+				begin
 				end
-		  end
+			end
+			else
+			begin
+				SynRow = 0;
+				CharLine = 4'h0;
+				BaseAddr = 16'h0000;
+			end
+		end
 		if (BlinkCounter < 20000000)
-		  begin
-		    BlinkCounter = BlinkCounter + 1;
-		  end
+		begin
+			BlinkCounter = BlinkCounter + 1;
+		end
 		else
-		  begin
-		    BlinkCounter = 0;
-			 BlinkStatus = (BlinkStatus == 1'b0) ? 1'b1 : 1'b0;
-		  end
-    end
+		begin
+			BlinkCounter = 0;
+			BlinkStatus = (BlinkStatus == 1'b0) ? 1'b1 : 1'b0;
+		end
+	end
 
-  always @(negedge SEQ_IN_0)
-    begin
-      HSync = ((SynCol < H_sync_start) || (SynCol > H_sync_stop)) ? 1'b0 : 1'b1;
+	always @(negedge SEQ_IN_0)
+	begin
+		HSync = ((SynCol < H_sync_start) || (SynCol > H_sync_stop)) ? 1'b0 : 1'b1;
 		VSync = ((SynRow < V_sync_start) || (SynRow > V_sync_stop)) ? 1'b0 : 1'b1;
 		VideoEnable = ((SynCol < H_img_start) || (SynRow < V_img_start) || (SynCol > H_img_stop) || (SynRow > V_img_stop)) ? 1'b0 : 1'b1;
-      VideoCol = ((SynCol < H_img_start) || (SynCol > H_img_stop)) ? 10'h000 : (SynCol - H_img_start); //[9:0];
-      // VideoRow = ((SynRow < V_img_start) || (SynRow > V_img_stop)) ? 10'h000 : SynRow - V_img_start;
+		VideoCol = ((SynCol < H_img_start) || (SynCol > H_img_stop)) ? 10'h000 : (SynCol - H_img_start);
 		TextAddr = BaseAddr + VideoCol;
 		ADDRA = {TextAddr[12:3], 4'h0};
-      VideoData = DOA[TextAddr[15:13]][15:0];
+		VideoData = DOA[TextAddr[15:13]][15:0];
 		Blink = DOPA[TextAddr[15:13]][1:0];
-      G_ADDRA = {VideoData[7:0], VideoCol[2:0], 3'b000};
+		G_ADDRA = {VideoData[7:0], VideoCol[2:0], 3'b000};
 		Foreground = VideoData[11:8];
 		Background = VideoData[15:12];
-      Pixel = (CharLine < 8) ? G_DOA[CharLine] : G_DOPA[0];
-      case(Blink)
-        2'b01: if (BlinkStatus == 0)
-		           begin
-		             Red = (Pixel == 0) ? Palette[Background][23:16] : Palette[Foreground][23:16];
-                   Green = (Pixel == 0) ? Palette[Background][15:8] : Palette[Foreground][15:8];
-                   Blue = (Pixel == 0) ? Palette[Background][7:0] : Palette[Foreground][7:0];
-					  end	 
-					else
-					  begin
-		             Red = Palette[Background][23:16];
-                   Green = Palette[Background][15:8];
-                   Blue = Palette[Background][7:0];
-					  end
-        2'b10: if (BlinkStatus == 0)
-		           begin
-		             Red = (Pixel == 0) ? Palette[Background][23:16] : Palette[Foreground][23:16];
-                   Green = (Pixel == 0) ? Palette[Background][15:8] : Palette[Foreground][15:8];
-                   Blue = (Pixel == 0) ? Palette[Background][7:0] : Palette[Foreground][7:0];
-					  end	 
-					else
-					  begin
-		             Red = Palette[Foreground][23:16];
-                   Green = Palette[Foreground][15:8];
-                   Blue = Palette[Foreground][7:0];
-					  end
-        2'b11: if (BlinkStatus == 0)
-		           begin
-		             Red = (Pixel == 0) ? Palette[Background][23:16] : Palette[Foreground][23:16];
-                   Green = (Pixel == 0) ? Palette[Background][15:8] : Palette[Foreground][15:8];
-                   Blue = (Pixel == 0) ? Palette[Background][7:0] : Palette[Foreground][7:0];
-					  end	 
-					else
-					  begin
-		             Red = (Pixel == 0) ? Palette[Foreground][23:16] : Palette[Background][23:16];
-                   Green = (Pixel == 0) ? Palette[Foreground][15:8] : Palette[Background][15:8];
-                   Blue = (Pixel == 0) ? Palette[Foreground][7:0] : Palette[Background][7:0];
-					  end
-        default: begin
-		             Red = (Pixel == 0) ? Palette[Background][23:16] : Palette[Foreground][23:16];
-                   Green = (Pixel == 0) ? Palette[Background][15:8] : Palette[Foreground][15:8];
-                   Blue = (Pixel == 0) ? Palette[Background][7:0] : Palette[Foreground][7:0];
-					  end	 
+		Pixel = (CharLine < 8) ? G_DOA[CharLine] : G_DOPA[0];
+		case(Blink)
+			2'b01:
+				if (BlinkStatus == 0)
+				begin
+					Red = (Pixel == 0) ? Palette[Background][23:16] : Palette[Foreground][23:16];
+					Green = (Pixel == 0) ? Palette[Background][15:8] : Palette[Foreground][15:8];
+					Blue = (Pixel == 0) ? Palette[Background][7:0] : Palette[Foreground][7:0];
+				end
+				else
+				begin
+					Red = Palette[Background][23:16];
+					Green = Palette[Background][15:8];
+					Blue = Palette[Background][7:0];
+				end
+			2'b10:
+				if (BlinkStatus == 0)
+				begin
+					Red = (Pixel == 0) ? Palette[Background][23:16] : Palette[Foreground][23:16];
+					Green = (Pixel == 0) ? Palette[Background][15:8] : Palette[Foreground][15:8];
+					Blue = (Pixel == 0) ? Palette[Background][7:0] : Palette[Foreground][7:0];
+				end
+				else
+				begin
+					Red = Palette[Foreground][23:16];
+					Green = Palette[Foreground][15:8];
+					Blue = Palette[Foreground][7:0];
+				end
+			2'b11:
+				if (BlinkStatus == 0)
+				begin
+					Red = (Pixel == 0) ? Palette[Background][23:16] : Palette[Foreground][23:16];
+					Green = (Pixel == 0) ? Palette[Background][15:8] : Palette[Foreground][15:8];
+					Blue = (Pixel == 0) ? Palette[Background][7:0] : Palette[Foreground][7:0];
+				end
+				else
+				begin
+					Red = (Pixel == 0) ? Palette[Foreground][23:16] : Palette[Background][23:16];
+					Green = (Pixel == 0) ? Palette[Foreground][15:8] : Palette[Background][15:8];
+					Blue = (Pixel == 0) ? Palette[Foreground][7:0] : Palette[Background][7:0];
+				end
+			default:
+				begin
+					Red = (Pixel == 0) ? Palette[Background][23:16] : Palette[Foreground][23:16];
+					Green = (Pixel == 0) ? Palette[Background][15:8] : Palette[Foreground][15:8];
+					Blue = (Pixel == 0) ? Palette[Background][7:0] : Palette[Foreground][7:0];
+				end 
 		endcase
-    end  
+	end  
 
 // ************************************************************************************************
 // * TMDS Encoding & Serialization
@@ -221,35 +230,34 @@ HdmiDisplay HdmiRenderEngine(.clk50(clk50),
 // ************************************************************************************************
 // * Text MAP RAM Port B: Write MAP Data by external usage
 // ************************************************************************************************
-  
-  wire [13:0] ADDRB;
-  wire [31:0] DIB;
-  wire [3:0] DIPB;
 
-  
-  wire [3:0] WEB0;
-  wire [3:0] WEB1;
-  wire [3:0] WEB2;
-  wire [3:0] WEB3;
-  wire [3:0] WEB4;
-  wire [3:0] WEB5;
-  wire [3:0] WEB6;
-  wire [3:0] WEB7;
+//wire [13:0] ADDRB;
+//wire [31:0] DIB;
+//wire [3:0] DIPB;
 
-  // write to one banks of the 8 banks, so all banks get the same data
-  assign ADDRB = {WAddr[9:0],4'h0};
-  assign DIB = {16'h0000, WData[15:0]};
-  assign DIPB = {2'b00, WData[17:16]};
-  
-  // set the write enable of the bank we are actually writing to
-  assign WEB0 = ((WAddr[12:10] == 3'b000) && (Write == 1)) ? 4'hF : 4'h0;
-  assign WEB1 = ((WAddr[12:10] == 3'b001) && (Write == 1)) ? 4'hF : 4'h0;
-  assign WEB2 = ((WAddr[12:10] == 3'b010) && (Write == 1)) ? 4'hF : 4'h0;
-  assign WEB3 = ((WAddr[12:10] == 3'b011) && (Write == 1)) ? 4'hF : 4'h0;
-  assign WEB4 = ((WAddr[12:10] == 3'b100) && (Write == 1)) ? 4'hF : 4'h0;
-  assign WEB5 = ((WAddr[12:10] == 3'b101) && (Write == 1)) ? 4'hF : 4'h0;
-  assign WEB6 = ((WAddr[12:10] == 3'b110) && (Write == 1)) ? 4'hF : 4'h0;
-  assign WEB7 = ((WAddr[12:10] == 3'b111) && (Write == 1)) ? 4'hF : 4'h0;
+wire [3:0] WEB0;
+wire [3:0] WEB1;
+wire [3:0] WEB2;
+wire [3:0] WEB3;
+wire [3:0] WEB4;
+wire [3:0] WEB5;
+wire [3:0] WEB6;
+wire [3:0] WEB7;
+
+// write to one banks of the 8 banks, so all banks get the same data
+// assign ADDRB = {WAddr[9:0],4'h0};
+//assign DIB = {16'h0000, WData[15:0]};
+//assign DIPB = {2'b00, WData[17:16]};
+
+// set the write enable of the bank we are actually writing to
+assign WEB0 = ((WAddr[12:10] == 3'b000) && (Write == 1)) ? 4'hF : 4'h0;
+assign WEB1 = ((WAddr[12:10] == 3'b001) && (Write == 1)) ? 4'hF : 4'h0;
+assign WEB2 = ((WAddr[12:10] == 3'b010) && (Write == 1)) ? 4'hF : 4'h0;
+assign WEB3 = ((WAddr[12:10] == 3'b011) && (Write == 1)) ? 4'hF : 4'h0;
+assign WEB4 = ((WAddr[12:10] == 3'b100) && (Write == 1)) ? 4'hF : 4'h0;
+assign WEB5 = ((WAddr[12:10] == 3'b101) && (Write == 1)) ? 4'hF : 4'h0;
+assign WEB6 = ((WAddr[12:10] == 3'b110) && (Write == 1)) ? 4'hF : 4'h0;
+assign WEB7 = ((WAddr[12:10] == 3'b111) && (Write == 1)) ? 4'hF : 4'h0;
 
 // ************************************************************************************************
 // * Graphic ROM Primitive
@@ -374,14 +382,14 @@ HdmiDisplay HdmiRenderEngine(.clk50(clk50),
                       .WEA(4'h0),
                       .DIA(32'h00000000),
                       .DIPA(4'h0),
-                      .ADDRB(ADDRB),
+                      .ADDRB({WAddr[9:0],4'h0}),
                       .CLKB(WClk),
                       .ENB(1'b1),
                       .REGCEB(1'b0),
                       .RSTB(1'b0),
                       .WEB(WEB0),
-                      .DIB(DIB),
-                      .DIPB(DIPB));
+                      .DIB({16'h0000, WData[15:0]}),
+                      .DIPB({2'b00, WData[17:16]}));
 
   RAMB16BWER #(.DATA_WIDTH_A(18),
                .DATA_WIDTH_B(18),
@@ -401,14 +409,14 @@ HdmiDisplay HdmiRenderEngine(.clk50(clk50),
                       .WEA(4'h0),
                       .DIA(32'h00000000),
                       .DIPA(4'h0),
-                      .ADDRB(ADDRB),
+                      .ADDRB({WAddr[9:0],4'h0}),
                       .CLKB(WClk),
                       .ENB(1'b1),
                       .REGCEB(1'b0),
                       .RSTB(1'b0),
                       .WEB(WEB1),
-                      .DIB(DIB),
-                      .DIPB(DIPB));
+                      .DIB({16'h0000, WData[15:0]}),
+                      .DIPB({2'b00, WData[17:16]}));
 
   RAMB16BWER #(.DATA_WIDTH_A(18),
                .DATA_WIDTH_B(18),
@@ -428,14 +436,14 @@ HdmiDisplay HdmiRenderEngine(.clk50(clk50),
                       .WEA(4'h0),
                       .DIA(32'h00000000),
                       .DIPA(4'h0),
-                      .ADDRB(ADDRB),
+                      .ADDRB({WAddr[9:0],4'h0}),
                       .CLKB(WClk),
                       .ENB(1'b1),
                       .REGCEB(1'b0),
                       .RSTB(1'b0),
                       .WEB(WEB2),
-                      .DIB(DIB),
-                      .DIPB(DIPB));
+                      .DIB({16'h0000, WData[15:0]}),
+                      .DIPB({2'b00, WData[17:16]}));
 
   RAMB16BWER #(.DATA_WIDTH_A(18),
                .DATA_WIDTH_B(18),
@@ -455,14 +463,14 @@ HdmiDisplay HdmiRenderEngine(.clk50(clk50),
                       .WEA(4'h0),
                       .DIA(32'h00000000),
                       .DIPA(4'h0),
-                      .ADDRB(ADDRB),
+                      .ADDRB({WAddr[9:0],4'h0}),
                       .CLKB(WClk),
                       .ENB(1'b1),
                       .REGCEB(1'b0),
                       .RSTB(1'b0),
                       .WEB(WEB3),
-                      .DIB(DIB),
-                      .DIPB(DIPB));
+                      .DIB({16'h0000, WData[15:0]}),
+                      .DIPB({2'b00, WData[17:16]}));
 
   RAMB16BWER #(.DATA_WIDTH_A(18),
                .DATA_WIDTH_B(18),
@@ -482,14 +490,14 @@ HdmiDisplay HdmiRenderEngine(.clk50(clk50),
                       .WEA(4'h0),
                       .DIA(32'h00000000),
                       .DIPA(4'h0),
-                      .ADDRB(ADDRB),
+                      .ADDRB({WAddr[9:0],4'h0}),
                       .CLKB(WClk),
                       .ENB(1'b1),
                       .REGCEB(1'b0),
                       .RSTB(1'b0),
                       .WEB(WEB4),
-                      .DIB(DIB),
-                      .DIPB(DIPB));
+                      .DIB({16'h0000, WData[15:0]}),
+                      .DIPB({2'b00, WData[17:16]}));
 
   RAMB16BWER #(.DATA_WIDTH_A(18),
                .DATA_WIDTH_B(18),
@@ -509,14 +517,14 @@ HdmiDisplay HdmiRenderEngine(.clk50(clk50),
                       .WEA(4'h0),
                       .DIA(32'h00000000),
                       .DIPA(4'h0),
-                      .ADDRB(ADDRB),
+                      .ADDRB({WAddr[9:0],4'h0}),
                       .CLKB(WClk),
                       .ENB(1'b1),
                       .REGCEB(1'b0),
                       .RSTB(1'b0),
                       .WEB(WEB5),
-                      .DIB(DIB),
-                      .DIPB(DIPB));
+                      .DIB({16'h0000, WData[15:0]}),
+                      .DIPB({2'b00, WData[17:16]}));
 
   RAMB16BWER #(.DATA_WIDTH_A(18),
                .DATA_WIDTH_B(18),
@@ -536,14 +544,14 @@ HdmiDisplay HdmiRenderEngine(.clk50(clk50),
                       .WEA(4'h0),
                       .DIA(32'h00000000),
                       .DIPA(4'h0),
-                      .ADDRB(ADDRB),
+                      .ADDRB({WAddr[9:0],4'h0}),
                       .CLKB(WClk),
                       .ENB(1'b1),
                       .REGCEB(1'b0),
                       .RSTB(1'b0),
                       .WEB(WEB6),
-                      .DIB(DIB),
-                      .DIPB(DIPB));
+                      .DIB({16'h0000, WData[15:0]}),
+                      .DIPB({2'b00, WData[17:16]}));
 
   RAMB16BWER #(.DATA_WIDTH_A(18),
                .DATA_WIDTH_B(18),
@@ -563,19 +571,19 @@ HdmiDisplay HdmiRenderEngine(.clk50(clk50),
                       .WEA(4'h0),
                       .DIA(32'h00000000),
                       .DIPA(4'h0),
-                      .ADDRB(ADDRB),
+                      .ADDRB({WAddr[9:0],4'h0}),
                       .CLKB(WClk),
                       .ENB(1'b1),
                       .REGCEB(1'b0),
                       .RSTB(1'b0),
                       .WEB(WEB7),
-                      .DIB(DIB),
-                      .DIPB(DIPB));
+                      .DIB({16'h0000, WData[15:0]}),
+                      .DIPB({2'b00, WData[17:16]}));
 
 // ************************************************************************************************
 // * DCM Primitive used by Sequencer
 // ************************************************************************************************
-
+/*
   DCM_SP #(.CLKIN_DIVIDE_BY_2("FALSE"),
            .CLKIN_PERIOD(12.5),                  // 12.5ns = 80MHz
            .CLKOUT_PHASE_SHIFT("NONE"),
@@ -601,5 +609,33 @@ HdmiDisplay HdmiRenderEngine(.clk50(clk50),
                           .PSEN(1'b0),
                           .PSINCDEC(1'b0),
                           .RST(1'b0));
+*/
+
+  DCM_SP #(.CLKIN_DIVIDE_BY_2("FALSE"),
+           .CLKIN_PERIOD(25),                  // 25ns = 40MHz
+           .CLKOUT_PHASE_SHIFT("NONE"),
+           .CLK_FEEDBACK("1X"),
+           .DESKEW_ADJUST("SYSTEM_SYNCHRONOUS"),
+           .STARTUP_WAIT("FALSE")
+          ) DCM_Sequencer(.CLK0(DCM_FB),         // Used for DCM Feedback
+                          .CLK180(),             
+                          .CLK270(),             
+                          .CLK2X(),      // PixClk * 4 = 160MHz
+                          .CLK2X180(),
+                          .CLK90(SEQ_IN_0),              // 90 deg from pix clock
+                          .CLKDV(),
+                          .CLKFX(),
+                          .CLKFX180(),
+                          .LOCKED(),
+                          .PSDONE(),
+                          .STATUS(),
+                          .CLKFB(DCM_FB),        // From CLK0 for DCM Feedback
+                          .CLKIN(PixClk),      // Pixel Clock : 40MHz from PLL
+                          .DSSEN(1'b0),
+                          .PSCLK(1'b0),
+                          .PSEN(1'b0),
+                          .PSINCDEC(1'b0),
+                          .RST(1'b0));
+
 
 endmodule

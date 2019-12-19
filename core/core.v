@@ -64,7 +64,7 @@ module XrcCore
 					BG = Row[3:0] + SW[4:3]; // + Frame[15:12];
 					FG = 4'hF - (Row & 4'hF);
 					BL = SW[2:1];  //2'b00;
-					Char = Char + 1;
+					Char = Char + 1'b1;
 					Status = 4'h2;
 				  end
         4'h2: begin
@@ -80,16 +80,16 @@ module XrcCore
 		          if (Col < 119)
 					   begin
 						  Col = Col + 1;
-						  if (Index < 14) Index = Index + 1;
+						  if (Index < 14) Index = Index + 1'b1;
 						  else Index = 0;
-						  WAddr = WAddr + 1;
+						  WAddr = WAddr + 1'b1;
 						  Status = 4'h1;
 						end
 					 else
 					   begin
 						  Col = 0;
 						  Index = 0;
-						  WAddr = WAddr + 1;
+						  WAddr = WAddr + 1'b1;
 						  if (Row < 60)
 						    begin
 							   Row = Row + 1;
@@ -98,7 +98,7 @@ module XrcCore
 						  else
 						    begin
 							 Char = Frame[15:8];
-							 Frame = Frame + 1;
+							 Frame = Frame + 1'b1;
 							   Status = 4'h0;
 							 end
 						end
