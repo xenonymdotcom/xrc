@@ -27,8 +27,6 @@ module HdmiDisplay
 // * TMDS Encoding & Serialization
 // *************************/***********************************************************************
 
-  //wire PixClk;
-  //wire PixClk_2;
   wire PixClk_10;
   wire SerDesStrobe;
   wire [9:0] EncRed;
@@ -57,36 +55,6 @@ module HdmiDisplay
   OBUFDS OutBufDif_C(.I(SerOutClock), .O(tmds_out_p[3]), .OB(tmds_out_n[3]));
 
 
-// ************************************************************************************************
-// * DCM Primitive used by Sequencer
-// ************************************************************************************************
-/*
-  DCM_SP #(.CLKIN_DIVIDE_BY_2("FALSE"),
-           .CLKIN_PERIOD(12.5),                  // 12.5ns = 80MHz
-           .CLKOUT_PHASE_SHIFT("NONE"),
-           .CLK_FEEDBACK("1X"),
-           .DESKEW_ADJUST("SYSTEM_SYNCHRONOUS"),
-           .STARTUP_WAIT("FALSE")
-          ) DCM_Sequencer(.CLK0(DCM_FB),         // Used for DCM Feedback
-                          .CLK180(),             
-                          .CLK270(),             
-                          .CLK2X(SEQ_IN_0),      // PixClk * 4 = 160MHz
-                          .CLK2X180(),
-                          .CLK90(),              
-                          .CLKDV(),
-                          .CLKFX(),
-                          .CLKFX180(),
-                          .LOCKED(),
-                          .PSDONE(),
-                          .STATUS(),
-                          .CLKFB(DCM_FB),        // From CLK0 for DCM Feedback
-                          .CLKIN(PixClk_2),      // Pixel Clock * 2: 80MHz from PLL
-                          .DSSEN(1'b0),
-                          .PSCLK(1'b0),
-                          .PSEN(1'b0),
-                          .PSINCDEC(1'b0),
-                          .RST(1'b0));
-*/
 // ************************************************************************************************
 // * PLL VCO:400MHz  PixClk:40MHz
 // ************************************************************************************************

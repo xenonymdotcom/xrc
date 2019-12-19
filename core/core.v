@@ -12,7 +12,8 @@ module XrcCore
 ( input clk50,
   output [3:0] tmds_out_p,
   output [3:0] tmds_out_n,
-  output [7:0] LEDS
+  output [7:0] LEDS,
+  input [4:1] SW
 );
 
   reg [12:0] WAddr;
@@ -60,9 +61,9 @@ module XrcCore
                 Status = 4'h1;
 				  end
 		  4'h1: begin
-					BG = Row[3:0]; // + Frame[15:12];
+					BG = Row[3:0] + SW[4:3]; // + Frame[15:12];
 					FG = 4'hF - (Row & 4'hF);
-					BL = 2'b00;
+					BL = SW[2:1];  //2'b00;
 					Char = Char + 1;
 					Status = 4'h2;
 				  end

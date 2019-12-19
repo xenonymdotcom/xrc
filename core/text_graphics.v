@@ -216,57 +216,16 @@ HdmiDisplay HdmiRenderEngine(.clk50(clk50),
   .Blue(Blue),
   .HSync(HSync), .VSync(VSync), .VideoEnable(VideoEnable)
 );
-/*
-  wire PixClk;
-  wire PixClk_2;
-  wire PixClk_10;
-  wire SerDesStrobe;
-  wire [9:0] EncRed;
-  wire [9:0] EncGreen;
-  wire [9:0] EncBlue;
-  wire SerOutRed;
-  wire SerOutGreen;
-  wire SerOutBlue;
-  reg SerOutClock=0;
 
-  Component_encoder CE_Red(.Data(Red), .C0(1'b0), .C1(1'b0), .DE(VideoEnable), .PixClk(PixClk), .OutEncoded(EncRed));
-  Component_encoder CE_Green(.Data(Green), .C0(1'b0), .C1(1'b0), .DE(VideoEnable), .PixClk(PixClk), .OutEncoded(EncGreen));
-  Component_encoder CE_Blue(.Data(Blue), .C0(HSync), .C1(VSync), .DE(VideoEnable), .PixClk(PixClk), .OutEncoded(EncBlue));
-
-  Serializer_10_1 SER_Red(.Data(EncRed), .Clk_10(PixClk_10), .Clk_2(PixClk_2), .Strobe(SerDesStrobe), .Out(SerOutRed));
-  Serializer_10_1 SER_Green(.Data(EncGreen), .Clk_10(PixClk_10), .Clk_2(PixClk_2), .Strobe(SerDesStrobe), .Out(SerOutGreen));
-  Serializer_10_1 SER_Blue(.Data(EncBlue), .Clk_10(PixClk_10), .Clk_2(PixClk_2), .Strobe(SerDesStrobe), .Out(SerOutBlue));
-  always @(posedge PixClk_2)
-  begin
-		SerOutClock = !SerOutClock;
-  end
-  
-  OBUFDS OutBufDif_B(.I(SerOutBlue), .O(tmds_out_p[0]), .OB(tmds_out_n[0]));
-  OBUFDS OutBufDif_G(.I(SerOutGreen), .O(tmds_out_p[1]), .OB(tmds_out_n[1]));
-  OBUFDS OutBufDif_R(.I(SerOutRed), .O(tmds_out_p[2]), .OB(tmds_out_n[2]));
-  OBUFDS OutBufDif_C(.I(SerOutClock), .O(tmds_out_p[3]), .OB(tmds_out_n[3]));*/
 
 // ************************************************************************************************
 // * Text MAP RAM Port B: Write MAP Data by external usage
 // ************************************************************************************************
   
   wire [13:0] ADDRB;
-  wire [31:0] DIB0;
-  wire [31:0] DIB1;
-  wire [31:0] DIB2;
-  wire [31:0] DIB3;
-  wire [31:0] DIB4;
-  wire [31:0] DIB5;
-  wire [31:0] DIB6;
-  wire [31:0] DIB7;
-  wire [3:0] DIPB0;
-  wire [3:0] DIPB1;
-  wire [3:0] DIPB2;
-  wire [3:0] DIPB3;
-  wire [3:0] DIPB4;
-  wire [3:0] DIPB5;
-  wire [3:0] DIPB6;
-  wire [3:0] DIPB7;
+  wire [31:0] DIB;
+  wire [3:0] DIPB;
+
   
   wire [3:0] WEB0;
   wire [3:0] WEB1;
@@ -277,24 +236,12 @@ HdmiDisplay HdmiRenderEngine(.clk50(clk50),
   wire [3:0] WEB6;
   wire [3:0] WEB7;
 
+  // write to one banks of the 8 banks, so all banks get the same data
   assign ADDRB = {WAddr[9:0],4'h0};
-  assign DIB0 = {16'h0000, WData[15:0]};
-  assign DIB1 = {16'h0000, WData[15:0]};
-  assign DIB2 = {16'h0000, WData[15:0]};
-  assign DIB3 = {16'h0000, WData[15:0]};
-  assign DIB4 = {16'h0000, WData[15:0]};
-  assign DIB5 = {16'h0000, WData[15:0]};
-  assign DIB6 = {16'h0000, WData[15:0]};
-  assign DIB7 = {16'h0000, WData[15:0]};
-  assign DIPB0 = {2'b00, WData[17:16]};
-  //assign DIPB1 = {2'b00, WData[17:16]};
-  //assign DIPB2 = {2'b00, WData[17:16]};
-  //assign DIPB3 = {2'b00, WData[17:16]};
-  //assign DIPB4 = {2'b00, WData[17:16]};
-  //assign DIPB5 = {2'b00, WData[17:16]};
-  //assign DIPB6 = {2'b00, WData[17:16]};
-  //assign DIPB7 = {2'b00, WData[17:16]};
+  assign DIB = {16'h0000, WData[15:0]};
+  assign DIPB = {2'b00, WData[17:16]};
   
+  // set the write enable of the bank we are actually writing to
   assign WEB0 = ((WAddr[12:10] == 3'b000) && (Write == 1)) ? 4'hF : 4'h0;
   assign WEB1 = ((WAddr[12:10] == 3'b001) && (Write == 1)) ? 4'hF : 4'h0;
   assign WEB2 = ((WAddr[12:10] == 3'b010) && (Write == 1)) ? 4'hF : 4'h0;
@@ -433,8 +380,8 @@ HdmiDisplay HdmiRenderEngine(.clk50(clk50),
                       .REGCEB(1'b0),
                       .RSTB(1'b0),
                       .WEB(WEB0),
-                      .DIB(DIB0),
-                      .DIPB(DIPB0));
+                      .DIB(DIB),
+                      .DIPB(DIPB));
 
   RAMB16BWER #(.DATA_WIDTH_A(18),
                .DATA_WIDTH_B(18),
@@ -460,8 +407,8 @@ HdmiDisplay HdmiRenderEngine(.clk50(clk50),
                       .REGCEB(1'b0),
                       .RSTB(1'b0),
                       .WEB(WEB1),
-                      .DIB(DIB1),
-                      .DIPB(DIPB0));
+                      .DIB(DIB),
+                      .DIPB(DIPB));
 
   RAMB16BWER #(.DATA_WIDTH_A(18),
                .DATA_WIDTH_B(18),
@@ -487,8 +434,8 @@ HdmiDisplay HdmiRenderEngine(.clk50(clk50),
                       .REGCEB(1'b0),
                       .RSTB(1'b0),
                       .WEB(WEB2),
-                      .DIB(DIB2),
-                      .DIPB(DIPB0));
+                      .DIB(DIB),
+                      .DIPB(DIPB));
 
   RAMB16BWER #(.DATA_WIDTH_A(18),
                .DATA_WIDTH_B(18),
@@ -514,8 +461,8 @@ HdmiDisplay HdmiRenderEngine(.clk50(clk50),
                       .REGCEB(1'b0),
                       .RSTB(1'b0),
                       .WEB(WEB3),
-                      .DIB(DIB3),
-                      .DIPB(DIPB0));
+                      .DIB(DIB),
+                      .DIPB(DIPB));
 
   RAMB16BWER #(.DATA_WIDTH_A(18),
                .DATA_WIDTH_B(18),
@@ -541,8 +488,8 @@ HdmiDisplay HdmiRenderEngine(.clk50(clk50),
                       .REGCEB(1'b0),
                       .RSTB(1'b0),
                       .WEB(WEB4),
-                      .DIB(DIB4),
-                      .DIPB(DIPB0));
+                      .DIB(DIB),
+                      .DIPB(DIPB));
 
   RAMB16BWER #(.DATA_WIDTH_A(18),
                .DATA_WIDTH_B(18),
@@ -568,8 +515,8 @@ HdmiDisplay HdmiRenderEngine(.clk50(clk50),
                       .REGCEB(1'b0),
                       .RSTB(1'b0),
                       .WEB(WEB5),
-                      .DIB(DIB5),
-                      .DIPB(DIPB0));
+                      .DIB(DIB),
+                      .DIPB(DIPB));
 
   RAMB16BWER #(.DATA_WIDTH_A(18),
                .DATA_WIDTH_B(18),
@@ -595,8 +542,8 @@ HdmiDisplay HdmiRenderEngine(.clk50(clk50),
                       .REGCEB(1'b0),
                       .RSTB(1'b0),
                       .WEB(WEB6),
-                      .DIB(DIB6),
-                      .DIPB(DIPB0));
+                      .DIB(DIB),
+                      .DIPB(DIPB));
 
   RAMB16BWER #(.DATA_WIDTH_A(18),
                .DATA_WIDTH_B(18),
@@ -622,8 +569,8 @@ HdmiDisplay HdmiRenderEngine(.clk50(clk50),
                       .REGCEB(1'b0),
                       .RSTB(1'b0),
                       .WEB(WEB7),
-                      .DIB(DIB7),
-                      .DIPB(DIPB0));
+                      .DIB(DIB),
+                      .DIPB(DIPB));
 
 // ************************************************************************************************
 // * DCM Primitive used by Sequencer
@@ -655,44 +602,4 @@ HdmiDisplay HdmiRenderEngine(.clk50(clk50),
                           .PSINCDEC(1'b0),
                           .RST(1'b0));
 
-// ************************************************************************************************
-// * PLL VCO:400MHz  PixClk:40MHz
-// ************************************************************************************************
-/*
-  wire pll_fbout;      // PLL Feedback
-  wire pll_clk10x;     // From PLL to BUFPLL
-  wire pll_clk2x;      // From PLL to BUFG
-  wire pll_clk1x;      // From PLL to BUFG
-  wire pll_locked;
-  
-  PLL_BASE #(.CLKOUT0_DIVIDE(1),  // IO clock 400MHz (VCO)
-             .CLKOUT1_DIVIDE(5),  // Intermediate clock 80MHz (VCO / 5)
-             .CLKOUT2_DIVIDE(10), // Pixle Clock 40MHz (VCO / 10)
-             .CLKFBOUT_MULT(8),   // VCO = 50MHz * 8 = 400MHz ...
-             .DIVCLK_DIVIDE(1),   // ... 400MHz / 1 = 400MHz
-             .CLKIN_PERIOD(20.00) // 20ns = 50MHz
-            ) ClockGenPLL(.CLKIN(clk50),
-                          .CLKFBIN(pll_fbout),
-                          .RST(1'b0),
-                          .CLKOUT0(pll_clk10x),
-                          .CLKOUT1(pll_clk2x),
-                          .CLKOUT2(pll_clk1x),
-                          .CLKOUT3(),
-                          .CLKOUT4(),
-                          .CLKOUT5(),
-                          .CLKFBOUT(pll_fbout),
-                          .LOCKED(pll_locked));
-
-  BUFG Clk1x_buf(.I(pll_clk1x), .O(PixClk));
-  BUFG Clk2x_buf(.I(pll_clk2x), .O(PixClk_2));
-  
-  BUFPLL #(.DIVIDE(5),
-           .ENABLE_SYNC("TRUE")
-          ) Clk10x_buf(.PLLIN(pll_clk10x),
-                       .GCLK(PixClk_2),
-                       .LOCKED(pll_locked),
-                       .IOCLK(PixClk_10),
-                       .SERDESSTROBE(SerDesStrobe),
-                       .LOCK());
-*/
 endmodule
